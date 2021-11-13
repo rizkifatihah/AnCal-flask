@@ -123,6 +123,7 @@ def Canny_detector(img, weak_th = None, strong_th = None):
     return mag
 
 class_names = ['Sapi Aceh', 'Sapi Angus', 'Sapi Bali', 'Sapi Brahman', 'Sapi Limousin', 'Sapi Madura', 'Sapi Ongole', 'Sapi Simental']
+class_names_ayam = ['Pejantan Busuk','Pejantan Kurang Segar','Pejantan Segar','Kampung Busuk','Kampung Kurang Segar','Kampung Segar']
 
 ####### API ROUTE #######
 
@@ -496,6 +497,62 @@ def classification():
             "msg":str(e)
         })
 
+@app.route("/classificationchicken", methods=["POST"])
+def classificationchicken():
+    try:
+        files = request.files["image"].read()
+
+        image = Image.open(BytesIO(files))
+
+        imagearray = np.array(image)
+
+        resized = cv2.resize(imagearray, (180,180))
+
+        expanded = tf.expand_dims(resized,0)
+
+        predictions = model.predict(expanded)
+        score = tf.nn.softmax(predictions[0])
+
+        text = "Gambar ini terklasifikasi sebagai {} dengan tingkat keyakinan {:.2f}%.".format(class_names_ayam[np.argmax(score)], 100 * np.max(score))
+        index = np.argmax(score)
+        tingkatkeyakinan = 100 * np.max(score)
+        namaayam = class_names_ayam[np.argmax(score)]
+
+        mydb.connect()
+        
+        cursor = mydb.cursor()
+        cursor.execute("SELECT * FROM ayam WHERE id_ayam=%s",(int(index),))
+
+        rows = cursor.fetchone()
+
+        cursor.close()
+        mydb.close()
+
+        return jsonify({
+            "success":True,
+            "datasapi":{
+                "id_ayam":rows[0],
+                "nama_ayam":rows[1],
+                "image":rows[2],
+                "content":rows[3]
+            },
+            "data":{
+                "text":text,
+                "index_class":int(index),
+                "class_name":class_names_ayam,
+                "keyakinan":tingkatkeyakinan,
+                "klasifikasi":namasapi
+            }
+        })
+        
+
+    except Exception as e:
+
+        print(e)
+        return jsonify({
+            "success":False,
+            "msg":str(e)
+        })
 
 
 @app.route("/classificationCowOrNot", methods=["POST"])
