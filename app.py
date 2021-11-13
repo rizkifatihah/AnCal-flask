@@ -25,6 +25,7 @@ mydb = mysql.connector.connect(
 
 model = keras.models.load_model("model-demo")
 modelCowOrNot = keras.models.load_model("CowOrNot")
+modelChicken = keras.models.load_model("modelchicken")
 
 # defining the canny detector function
   
@@ -510,7 +511,7 @@ def classificationchicken():
 
         expanded = tf.expand_dims(resized,0)
 
-        predictions = model.predict(expanded)
+        predictions = modelChicken.predict(expanded)
         score = tf.nn.softmax(predictions[0])
 
         text = "Gambar ini terklasifikasi sebagai {} dengan tingkat keyakinan {:.2f}%.".format(class_names_ayam[np.argmax(score)], 100 * np.max(score))
