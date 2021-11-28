@@ -26,6 +26,7 @@ mydb = mysql.connector.connect(
 model = keras.models.load_model("model-demo")
 modelCowOrNot = keras.models.load_model("CowOrNot")
 modelChicken = keras.models.load_model("modelchicken")
+modelChickenOrNot = keras.models.load_model("ChickenOrNot")
 
 # defining the canny detector function
   
@@ -592,6 +593,82 @@ def cowornot():
         return jsonify({
             "success":True,
             "result":class_cowornot[np.argmax(score)]
+        })
+
+        # image = Image.open(BytesIO(files))
+
+        # imagearray = np.array(image)
+
+        # imagearray = Canny_detector(imagearray)
+
+        # resized = cv2.resize(imagearray, (180,180))
+
+        # expanded = tf.expand_dims(resized,0)
+
+        # predictions = model.predict(expanded)
+        # score = tf.nn.softmax(predictions[0])
+
+        # text = "Gambar ini terklasifikasi sebagai {} dengan tingkat keyakinan {:.2f}%.".format(class_names[np.argmax(score)], 100 * np.max(score))
+        # index = np.argmax(score)
+        
+        # classCowOrNot = ['Bukan Sapi', 'Sapi']
+
+        # if classCowOrNot[index]=="Bukan Sapi":
+        #     return jsonify({
+        #         "success":True,
+        #         "sapi":False
+        #     })
+        # else:
+        #     return jsonify({
+        #         "success":True,
+        #         "sapi":False
+        #     })
+
+    except Exception as e:
+
+        print(e)
+        return jsonify({
+            "success":False,
+            "msg":str(e)
+        })
+
+
+@app.route("/classificationChickenOrNot", methods=["POST"])
+def chickenornot():
+    try:
+        class_chickenornot = ['Data Ayam', 'Data Bukan Ayam']
+
+        files = request.files["image"].read()
+
+        file = BytesIO(files)
+
+        file.seek(0)
+
+        id = uuid.uuid4()
+        id = str(id)
+
+        with open(id+'.jpg', 'wb') as f:
+            f.write(file.getbuffer())
+
+        imread = cv2.imread(id+'.jpg')
+        canny = Canny_detector(imread)
+
+        cv2.imwrite(id+'.jpg',canny)
+
+        img = keras.preprocessing.image.load_img(id+'.jpg', target_size=(180,180))
+
+        img_array = keras.preprocessing.image.img_to_array(img)
+        img_array = tf.expand_dims(img_array, 0) # Create a batch
+
+        predictions = model.predict(img_array)
+
+        score = tf.nn.softmax(predictions[0])
+
+        return "This image most likely belongs to {} with a {:.2f} percent confidence.".format(class_chickenornot[np.argmax(score)], 100 * np.max(score))
+
+        return jsonify({
+            "success":True,
+            "result":class_chickenornot[np.argmax(score)]
         })
 
         # image = Image.open(BytesIO(files))
